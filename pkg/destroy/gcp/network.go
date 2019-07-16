@@ -171,7 +171,7 @@ func (o *ClusterUninstaller) listBackendServicesWithFilter(fields string, filter
 	result := []string{}
 	ctx, cancel := o.contextWithTimeout()
 	defer cancel()
-	req := o.computeSvc.RegionBackendServices.List(o.ProjectID, o.Region).Fields(googleapi.Field(fields))
+	req := o.computeSvc.BackendServices.List(o.ProjectID).Fields(googleapi.Field(fields))
 	if len(filter) > 0 {
 		req = req.Filter(filter)
 	}
@@ -194,7 +194,7 @@ func (o *ClusterUninstaller) deleteBackendService(name string) error {
 	o.Logger.Debugf("Deleting backend service %s", name)
 	ctx, cancel := o.contextWithTimeout()
 	defer cancel()
-	_, err := o.computeSvc.RegionBackendServices.Delete(o.ProjectID, o.Region, name).Context(ctx).Do()
+	_, err := o.computeSvc.BackendServices.Delete(o.ProjectID, name).Context(ctx).Do()
 	if err != nil && !isNoOp(err) {
 		return errors.Wrapf(err, "failed to delete backend service %s", name)
 	}
@@ -256,52 +256,6 @@ func (o *ClusterUninstaller) destroyHealthChecks() error {
 	}
 	for _, healthCheck := range healthChecks {
 		err = o.deleteHealthCheck(healthCheck)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (o *ClusterUninstaller) listHTTPHealthChecks() ([]string, error) {
-	o.Logger.Debugf("Listing HTTP health checks")
-	result := []string{}
-	ctx, cancel := o.contextWithTimeout()
-	defer cancel()
-	req := o.computeSvc.HttpHealthChecks.List(o.ProjectID).Fields("items(name)").Filter(o.clusterIDFilter())
-	err := req.Pages(ctx, func(list *compute.HttpHealthCheckList) error {
-		for _, healthCheck := range list.Items {
-			o.Logger.Debugf("Found HTTP health check: %s", healthCheck.Name)
-			result = append(result, healthCheck.Name)
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to list HTTP health checks")
-	}
-	return result, nil
-}
-
-func (o *ClusterUninstaller) deleteHTTPHealthCheck(name string) error {
-	o.Logger.Debugf("Deleting HTTP health check %s", name)
-	ctx, cancel := o.contextWithTimeout()
-	defer cancel()
-	_, err := o.computeSvc.HttpHealthChecks.Delete(o.ProjectID, name).Context(ctx).Do()
-	if err != nil && !isNoOp(err) {
-		return errors.Wrapf(err, "failed to delete HTTP health check %s", name)
-	}
-	return nil
-}
-
-// destroyHTTPHealthChecks removes all HTTP health check resources that have a name prefixed
-// with the cluster's infra ID
-func (o *ClusterUninstaller) destroyHTTPHealthChecks() error {
-	healthChecks, err := o.listHTTPHealthChecks()
-	if err != nil {
-		return err
-	}
-	for _, healthCheck := range healthChecks {
-		err = o.deleteHTTPHealthCheck(healthCheck)
 		if err != nil {
 			return err
 		}
@@ -459,7 +413,7 @@ func (o *ClusterUninstaller) destroyNetworks() error {
 		}
 		for _, route := range routes {
 			if err = o.deleteRoute(route); err != nil {
-				o.Logger.Debugf("Failed to delete route %s: %v", route, err)
+				o.Logger.Debug("error deleting route %s: %v", route, err)
 			}
 		}
 
@@ -518,52 +472,6 @@ func (o *ClusterUninstaller) destroyRoutes() error {
 	}
 	for _, route := range routes {
 		err = o.deleteRoute(route)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (o *ClusterUninstaller) listRouters() ([]string, error) {
-	o.Logger.Debug("Listing routers")
-	result := []string{}
-	ctx, cancel := o.contextWithTimeout()
-	defer cancel()
-	req := o.computeSvc.Routers.List(o.ProjectID, o.Region).Fields("items(name)").Filter(o.clusterIDFilter())
-	err := req.Pages(ctx, func(list *compute.RouterList) error {
-		for _, router := range list.Items {
-			o.Logger.Debugf("Found router: %s", router.Name)
-			result = append(result, router.Name)
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to list routers")
-	}
-	return result, nil
-}
-
-func (o *ClusterUninstaller) deleteRouter(name string) error {
-	o.Logger.Debugf("Deleting router %s", name)
-	ctx, cancel := o.contextWithTimeout()
-	defer cancel()
-	_, err := o.computeSvc.Routers.Delete(o.ProjectID, o.Region, name).Context(ctx).Do()
-	if err != nil && !isNoOp(err) {
-		return errors.Wrapf(err, "failed to delete router %s", name)
-	}
-	return nil
-}
-
-// destroyRouters removes all router resources that have a name prefixed with the
-// cluster's infra ID
-func (o *ClusterUninstaller) destroyRouters() error {
-	routers, err := o.listRouters()
-	if err != nil {
-		return err
-	}
-	for _, router := range routers {
-		err = o.deleteRouter(router)
 		if err != nil {
 			return err
 		}

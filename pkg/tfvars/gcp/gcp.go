@@ -20,11 +20,10 @@ type config struct {
 	ImageID               string `json:"gcp_image_id,omitempty"`
 	VolumeType            string `json:"gcp_master_root_volume_type,omitempty"`
 	VolumeSize            int64  `json:"gcp_master_root_volume_size,omitempty"`
-	PublicZoneName        string `json:"gcp_public_dns_zone_name,omitempty"`
 }
 
 // TFVars generates gcp-specific Terraform variables launching the cluster.
-func TFVars(auth Auth, masterConfigs []*gcpprovider.GCPMachineProviderSpec, publicZoneName string) ([]byte, error) {
+func TFVars(auth Auth, masterConfigs []*gcpprovider.GCPMachineProviderSpec) ([]byte, error) {
 	masterConfig := masterConfigs[0]
 	cfg := &config{
 		Auth:                  auth,
@@ -34,7 +33,6 @@ func TFVars(auth Auth, masterConfigs []*gcpprovider.GCPMachineProviderSpec, publ
 		VolumeType:            masterConfig.Disks[0].Type,
 		VolumeSize:            masterConfig.Disks[0].SizeGb,
 		ImageID:               masterConfig.Disks[0].Image,
-		PublicZoneName:        publicZoneName,
 	}
 
 	return json.MarshalIndent(cfg, "", "  ")

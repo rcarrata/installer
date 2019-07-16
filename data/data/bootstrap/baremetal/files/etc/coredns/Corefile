@@ -1,8 +1,5 @@
 # Configuration template for the CoreDNS instance used to provide DNS
 # resolution between nodes in the cluster.
-#
-# For more information, see installer/data/data/bootstrap/baremetal/README.md
-#
 
 . {
     errors
@@ -15,5 +12,4 @@
         {$API_VIP} api-int.{$CLUSTER_DOMAIN}
         fallthrough
     }
-
 }

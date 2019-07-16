@@ -4,7 +4,6 @@ package tfvars
 import (
 	"encoding/json"
 	"net"
-	"strings"
 )
 
 type config struct {
@@ -22,8 +21,8 @@ type config struct {
 func TFVars(clusterID string, clusterDomain string, baseDomain string, machineCIDR *net.IPNet, bootstrapIgn string, masterIgn string, masterCount int) ([]byte, error) {
 	config := &config{
 		ClusterID:         clusterID,
-		ClusterDomain:     strings.TrimSuffix(clusterDomain, "."),
-		BaseDomain:        strings.TrimSuffix(baseDomain, "."),
+		ClusterDomain:     clusterDomain,
+		BaseDomain:        baseDomain,
 		MachineCIDR:       machineCIDR.String(),
 		Masters:           masterCount,
 		IgnitionBootstrap: bootstrapIgn,
